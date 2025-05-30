@@ -1,0 +1,69 @@
+# Gunakan base image Python yang sesuai (misal: Python 3.11)
+FROM python:3.11-slim
+
+# Instal dependensi sistem:
+# - wget dan bash (sudah ada)
+# - openjdk-17-jre-headless: Instal JRE 17 (cukup untuk menjalankan Spark)
+# - procps: Menyediakan perintah 'ps'
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget bash openjdk-17-jre-headless procps && \
+    rm -rf /var/lib/apt/lists/*
+
+# Atur variabel lingkungan JAVA_HOME
+# Lokasi JRE 17 headless di Debian/Ubuntu biasanya di sini
+# Perhatikan: Ini JRE, bukan JDK. Pathnya mungkin sedikit berbeda.
+# Kita akan verifikasi path yang benar di langkah debugging.
+ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH $PATH:$JAVA_HOME/bin
+
+# --- DEBUGGING: Periksa lokasi Java ---
+# Tambahkan ini untuk memastikan JAVA_HOME diatur dengan benar
+RUN echo "Checking Java installation path..."
+RUN which java # Cek path executable 'java'
+RUN ls -l /usr/lib/jvm/ # List isi direktori jvm
+RUN ls -l ${JAVA_HOME}/bin/java # Cek apakah file java ada di path JAVA_HOME
+# --- AKHIR DEBUGGING ---
+
+# --- Instalasi Spark Binary ---
+# Unduh dan ekstrak Spark binary di dalam kontainer ke lokasi yang tetap
+ARG SPARK_VERSION=3.5.5
+ARG HADOOP_VERSION=3
+ENV SPARK_TGZ spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
+ENV SPARK_PATH /opt/spark
+
+RUN wget https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/${SPARK_TGZ} -O /tmp/${SPARK_TGZ} \
+    && tar -xzf /tmp/${SPARK_TGZ} -C /opt \
+    && mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} ${SPARK_PATH} \
+    && rm /tmp/${SPARK_TGZ}
+
+# Atur variabel lingkungan SPARK_HOME ke lokasi tetap
+ENV SPARK_HOME ${SPARK_PATH}
+ENV PATH $PATH:$SPARK_HOME/bin
+
+# --- Instalasi Dependensi Python ---
+COPY requirements.txt /app/
+WORKDIR /app
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --- Buat User Non-Root dan Atur Izin ---
+RUN adduser --system --group sparkuser
+RUN chown -R sparkuser:sparkuser ${SPARK_HOME}
+RUN chown -R sparkuser:sparkuser /app
+
+# Beralih ke user non-root
+USER sparkuser
+
+# --- Salin Script API ---
+# Salin script api_server.py ke dalam kontainer
+COPY api_server.py /app/
+
+# --- Konfigurasi API ---
+# Direktori tempat model akan di-mount (harus sama dengan MODEL_BASE_PATH di api_server.py)
+ENV MODEL_BASE_PATH /app/trained_models
+
+# Expose port API (sesuai dengan port di api_server.py)
+EXPOSE 5000
+
+# --- Perintah Saat Kontainer Start ---
+# Jalankan script API server
+CMD ["python", "api_server.py"]

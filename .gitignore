@@ -1,0 +1,37 @@
+# Ignore virtual environment directory
+.venv/
+.venv_py311/
+env/
+
+# Ignore generated data batches by Kafka Consumer
+data_batches/
+
+# Ignore trained models saved by Spark
+trained_models/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore Spark temporary directories and event logs
+# Spark often creates temporary directories starting with .spark-staging-
+.spark-staging-*
+spark-events/ # If Spark event logging is enabled
+
+# Ignore editor/IDE specific files
+.vscode/        # Visual Studio Code
+.idea/          # IntelliJ IDEA / PyCharm
+*.iml           # IntelliJ IDEA module files
+*.swp           # Vim swap files
+*~              # Backup files
+
+# Ignore OS specific files
+.DS_Store       # macOS
+Thumbs.db       # Windows
+
+# Ignore any log files generated (if your scripts create them)
+*.log
+
+# Ignore Docker specific files that are temporary or local
+# .dockerignore # Biasanya tidak perlu diabaikan, ini file konfigurasi
+# build/ # Jika ada direktori build Docker

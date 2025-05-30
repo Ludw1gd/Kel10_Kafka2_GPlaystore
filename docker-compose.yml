@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  
+  # Service untuk API Server
+  api-server:
+    build:
+      context: . # Build dari direktori saat ini
+      dockerfile: Dockerfile.api-server # Gunakan Dockerfile yang baru dibuat
+    volumes:
+      # Mount direktori model dari host ke dalam kontainer
+      # Ini agar API bisa membaca model yang dilatih di host
+      - ./trained_models:/app/trained_models
+    ports:
+      # Mapping port API dari kontainer (5000) ke host (5000)
+      - "5000:5000"
+    # Environment variables sudah diatur di Dockerfile, tapi bisa ditambahkan di sini jika perlu
+    # environment:
+    #   SPARK_HOME: /opt/spark-3.5.5-bin-hadoop3 # Contoh, pastikan sesuai Dockerfile
+    # Perintah saat kontainer start (sudah diatur di Dockerfile CMD, tapi bisa ditimpa di sini)
+    # command: ["python", "api_server.py"]
+    depends_on:
+      # API tidak langsung butuh Kafka untuk serving, tapi ini menunjukkan bagian dari sistem
+      - kafka # Opsional, tergantung kebutuhan arsitektur logis
+    # Jika Anda ingin API restart otomatis jika crash
+    restart: on-failure
