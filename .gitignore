@@ -5,11 +5,13 @@ env/
 
 # Ignore generated data batches by Kafka Consumer
 data_batches/
+data_batches2/
 
 Google-Playstore.csv
 
 # Ignore trained models saved by Spark
 trained_models/
+trained_models1/
 
 # Ignore Python bytecode files
 __pycache__/

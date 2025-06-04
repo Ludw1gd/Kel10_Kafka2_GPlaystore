@@ -1,3 +1,4 @@
 pyspark==3.5.5
 flask
 pandas # Jika Anda menggunakan pandas di API untuk pra-pemrosesan input
+pyarrow
