@@ -4,7 +4,7 @@
 
 | Nama             | NRP        |
 |------------------|------------|
-| Dionisius Marcel |            |
+| Dionisius Marcel | 5027231044 |
 | Muhammad Nafi    | 5027231045 |
 | Tio Axellino     | 5027231065 |
 
